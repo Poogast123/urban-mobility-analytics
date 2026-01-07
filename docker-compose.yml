@@ -80,6 +80,40 @@ services:
     networks:
       - default
 
+  spark-master:
+    image: apache/spark:3.4.2-python3
+    container_name: spark-master
+    hostname: spark-master
+    command: /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master
+    ports:
+      - "9090:8080"
+      - "7077:7077"
+    networks:
+      - default
+
+  spark-worker:
+    image: apache/spark:3.4.2-python3
+    container_name: spark-worker
+    command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
+    depends_on:
+      - spark-master
+    environment:
+      SPARK_WORKER_CORES: 1
+      SPARK_WORKER_MEMORY: 1g
+    networks:
+      - default
+
+  traffic-analytics:
+    build: ./spark  
+    container_name: traffic-analytics-job
+    depends_on:
+      - spark-master
+      - spark-worker
+      - namenode
+    networks:
+      - default
+    restart: "no"
+
 volumes:
   hadoop_namenode:
   hadoop_datanode:
