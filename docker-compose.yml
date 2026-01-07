@@ -114,6 +114,32 @@ services:
       - default
     restart: "no"
 
+  postgres:
+    image: postgres:14
+    container_name: postgres
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: smartcity
+    ports:
+      - "5432:5432"
+    networks:
+      - default
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - postgres
+    networks:
+      - default
+
+  
+
 volumes:
   hadoop_namenode:
   hadoop_datanode:

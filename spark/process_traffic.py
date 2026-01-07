@@ -1,8 +1,8 @@
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, avg, count, max, current_timestamp
-from pyspark.sql.types import StructType, StructField, StringType, IntegerType, DoubleType, TimestampType
+from pyspark.sql.types import StructType, StructField, StringType, IntegerType, DoubleType
 
-# Define the schema to ensure data types are correct
+# Define Schema
 traffic_schema = StructType([
     StructField("sensor_id", StringType(), True),
     StructField("road_id", StringType(), True),
@@ -11,12 +11,11 @@ traffic_schema = StructType([
     StructField("vehicle_count", IntegerType(), True),
     StructField("average_speed", DoubleType(), True),
     StructField("occupancy_rate", IntegerType(), True),
-    StructField("event_time", StringType(), True) # Read as string first
+    StructField("event_time", StringType(), True)
 ])
 
 def run_traffic_analysis():
-    # Initialize Spark Session
-    # We set HDFS user to 'root' to avoid permission issues
+    # Initialize Spark with HDFS config
     spark = SparkSession.builder \
         .appName("SmartCityTrafficAnalysis") \
         .config("spark.hadoop.fs.defaultFS", "hdfs://namenode:9000") \
@@ -25,65 +24,69 @@ def run_traffic_analysis():
 
     spark.sparkContext.setLogLevel("WARN")
     
-    # 1. Read Raw Data from HDFS [cite: 80]
-    # Reads all JSON files from the raw directory
+    # 1. Read Raw Data (Raw Zone)
     input_path = "/data/raw/traffic/*/*/*.json"
     print(f"Reading data from: {input_path}")
     
     try:
         df = spark.read.schema(traffic_schema).json(input_path)
         
-        # Filter out potential empty reads
         if df.count() == 0:
-            print("No data found in HDFS yet!")
+            print("No data found in HDFS!")
             return
 
         print(f"Loaded {df.count()} events.")
 
-        # 2. Calculate Indicators [cite: 81]
-
-        # A. Traffic by Zone (Average vehicle count) [cite: 83]
+        # 2. Calculate KPIs (Processing)
+        
+        # A. Traffic per Zone
         traffic_by_zone = df.groupBy("zone").agg(
             avg("vehicle_count").alias("avg_traffic"),
             max("vehicle_count").alias("max_traffic")
         )
 
-        # B. Average Speed by Road [cite: 85]
+        # B. Speed per Road
         speed_by_road = df.groupBy("road_id", "road_type").agg(
             avg("average_speed").alias("avg_speed")
         )
 
-        # C. Congestion Detection [cite: 87]
-        # We define congestion as occupancy_rate > 80%
+        # C. Congestion
         congested_zones = df.filter(col("occupancy_rate") > 80) \
                             .groupBy("zone") \
                             .count() \
                             .withColumnRenamed("count", "congestion_incidents") \
                             .orderBy(col("congestion_incidents").desc())
 
-        # 3. Display Results (for verification)
-        print("\n--- RAFFIC BY ZONE ---")
-        traffic_by_zone.show()
-
-        print("\n--- SPEED BY ROAD ---")
-        speed_by_road.show()
+        # 3. Save to Analytics Zone (HDFS - Parquet)
+        hdfs_out = "/data/analytics/traffic"
+        print(f"Saving to HDFS: {hdfs_out}")
         
-        print("\n--- CONGESTION ALERTS ---")
-        congested_zones.show()
+        traffic_by_zone.write.mode("overwrite").parquet(f"{hdfs_out}/zone_stats")
+        speed_by_road.write.mode("overwrite").parquet(f"{hdfs_out}/road_stats")
+        congested_zones.write.mode("overwrite").parquet(f"{hdfs_out}/congestion")
 
-        # 4. Save to Processed Zone (Parquet Format) [cite: 88, 95]
-        # Using 'overwrite' to replace old calculations for this run
-        output_path = "/data/analytics/traffic"
-
-        print(f"Saving Analytics data to: {output_path} (Format: Parquet)")
-
-        traffic_by_zone.write.mode("overwrite").parquet(f"{output_path}/zone_stats")
-        speed_by_road.write.mode("overwrite").parquet(f"{output_path}/road_stats")
-        congested_zones.write.mode("overwrite").parquet(f"{output_path}/congestion")
+        # 4. Save to PostgreSQL (Serving Layer for Grafana)
+        print("Writing data to PostgreSQL...")
+        
+        db_props = {
+            "user": "user",
+            "password": "password",
+            "driver": "org.postgresql.Driver"
+        }
+        jdbc_url = "jdbc:postgresql://postgres:5432/smartcity"
+        
+        # Write tables - ALWAYS write, even if empty
+        traffic_by_zone.write.jdbc(jdbc_url, "zone_stats", mode="overwrite", properties=db_props)
+        speed_by_road.write.jdbc(jdbc_url, "road_stats", mode="overwrite", properties=db_props)
+        
+        # CHANGED: Removed the 'if count > 0' check.
+        # This forces Spark to create the empty table structure in Postgres if no congestion exists.
+        congested_zones.write.jdbc(jdbc_url, "congestion", mode="overwrite", properties=db_props)
+            
+        print("Data successfully pushed to PostgreSQL!")
 
     except Exception as e:
-        print(f"Error during processing: {e}")
-        # Print stack trace for debugging
+        print(f"Error: {e}")
         import traceback
         traceback.print_exc()
 
