@@ -128,10 +128,10 @@ The solution is fully containerized using **Docker** and follows an enhanced **E
     # Create the virtual environment and install dependencies
     python -m venv venv
     source venv/bin/activate
-    pip install kafka-python hdfs
+    pip install -r requirements.txt
 
     # Run the simulator
-    python data_generator/traffic_generator.py
+    python traffic_generator.py
     ```
 
 4.  **Access Interfaces**
