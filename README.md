@@ -140,9 +140,3 @@ The solution is fully containerized using **Docker** and follows an enhanced **E
     * **HDFS:** `http://localhost:9870`
 
 ---
-
-## Future Improvements
-
-* **Structured Streaming:** Implement Spark Structured Streaming for true real-time latency (Lambda Architecture).
-* **Alerting:** Configure Grafana Alerting to send emails when congestion exceeds 90%.
-* **Security:** Secure the cluster using Kerberos authentication.
