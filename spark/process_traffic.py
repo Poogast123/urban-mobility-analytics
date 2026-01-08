@@ -75,12 +75,9 @@ def run_traffic_analysis():
         }
         jdbc_url = "jdbc:postgresql://postgres:5432/smartcity"
         
-        # Write tables - ALWAYS write, even if empty
+        # Write tables 
         traffic_by_zone.write.jdbc(jdbc_url, "zone_stats", mode="overwrite", properties=db_props)
         speed_by_road.write.jdbc(jdbc_url, "road_stats", mode="overwrite", properties=db_props)
-        
-        # CHANGED: Removed the 'if count > 0' check.
-        # This forces Spark to create the empty table structure in Postgres if no congestion exists.
         congested_zones.write.jdbc(jdbc_url, "congestion", mode="overwrite", properties=db_props)
             
         print("Data successfully pushed to PostgreSQL!")

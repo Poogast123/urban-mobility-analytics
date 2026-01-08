@@ -2,7 +2,7 @@ import json
 import random
 import time
 from datetime import datetime
-from kafka import KafkaProducer  # Import the Kafka library
+from kafka import KafkaProducer
 
 # Configuration for simulation
 ZONES = ["Centre-Ville", "Zone Industrielle", "Quartier Résidentiel", "Aéroport"]
@@ -11,8 +11,6 @@ ROAD_IDS = ["R-101", "A-205", "R-330", "A-55", "R-12"]
 SENSOR_IDS = [f"SENSOR_{i}" for i in range(1, 21)]
 
 # --- KAFKA CONFIGURATION ---
-# We connect to localhost:9092 because we are running this script 
-# from your machine (Host), not inside Docker.
 producer = KafkaProducer(
     bootstrap_servers=['localhost:9092'],
     value_serializer=lambda x: json.dumps(x).encode('utf-8')
@@ -70,14 +68,13 @@ def start_generation():
             # --- SEND TO KAFKA ---
             producer.send(TOPIC_NAME, value=event)
             
-            # Print to console for verification
             print(f"Sent: {event['sensor_id']} | Zone: {event['zone']} | Speed: {event['average_speed']}")
             
             time.sleep(1) 
             
     except KeyboardInterrupt:
         print("\nSimulation stopped.")
-        producer.close() # Close connection cleanly
+        producer.close()
 
 if __name__ == "__main__":
     start_generation()

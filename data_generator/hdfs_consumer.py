@@ -9,8 +9,6 @@ import os
 KAFKA_TOPIC = 'traffic-events'
 KAFKA_BOOTSTRAP_SERVERS = ['kafka:29092']
 
-# Connect to HDFS (NameNode is exposed on localhost:9870 in your docker-compose)
-# We use 'root' user as defined in your hadoop env config
 HDFS_CLIENT = InsecureClient('http://namenode:9870', user='root')
 HDFS_BASE_PATH = '/data/raw/traffic'
 
@@ -19,8 +17,8 @@ def get_hdfs_path(event):
     Creates a path based on Date and Zone as requested in Source 74.
     Format: /data/raw/traffic/YYYY-MM-DD/Zone_Name/
     """
-    event_date = event['event_time'].split('T')[0] # Extract YYYY-MM-DD
-    zone_sanitized = event['zone'].replace(" ", "_") # Remove spaces for filenames
+    event_date = event['event_time'].split('T')[0]
+    zone_sanitized = event['zone'].replace(" ", "_") 
     return f"{HDFS_BASE_PATH}/{event_date}/{zone_sanitized}"
 
 def consume_and_store():
@@ -28,16 +26,16 @@ def consume_and_store():
     consumer = KafkaConsumer(
         KAFKA_TOPIC,
         bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS,
-        auto_offset_reset='earliest', # Read from beginning if we missed data
+        auto_offset_reset='earliest',
         value_deserializer=lambda x: json.loads(x.decode('utf-8')),
-        group_id='hdfs-archiver-group' # Consumer group
+        group_id='hdfs-archiver-group'
     )
 
     print("Consumer started. Listening for messages...")
 
     # Buffer to avoid creating too many small files in HDFS
     buffer = []
-    BATCH_SIZE = 50  # Write to HDFS every 50 messages
+    BATCH_SIZE = 50 
     
     for message in consumer:
         event = message.value
@@ -47,7 +45,7 @@ def consume_and_store():
 
         if len(buffer) >= BATCH_SIZE:
             save_batch_to_hdfs(buffer)
-            buffer = [] # Clear buffer
+            buffer = [] 
 
 def save_batch_to_hdfs(batch):
     """
