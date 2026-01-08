@@ -113,7 +113,7 @@ The solution is fully containerized using **Docker** and follows an enhanced **E
 
 1.  **Clone the repository**
     ```bash
-    git clone [https://github.com/your-username/smart-city-pipeline.git](https://github.com/your-username/smart-city-pipeline.git)
+    git clone https://github.com/Poogast123/urban-mobility-analytics.git
     cd smart-city-pipeline
     ```
 
