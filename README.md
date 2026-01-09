@@ -68,11 +68,21 @@ The solution is fully containerized using **Docker** and follows an enhanced **E
 ### 1. Data Collection & Ingestion
 * **Simulation:** A Python script (`traffic_generator.py`) simulates realistic traffic patterns, including logic for "Rush Hours" (8 AM–10 AM, 5 PM–7 PM) where vehicle count and occupancy rates increase while speed decreases.
 * **Data Format:** JSON events containing `sensor_id`, `road_id`, `road_type`, `vehicle_count`, `average_speed`, `occupancy_rate`, and `event_time`.
+
+![Figure 2.1: Python traffic generator output sending data to Kafka](images/figure_2_1_traffic_generator.png)
+*Figure 2.1: Output of the Python traffic generator.*
+
 * **Ingestion:** Events are pushed to an **Apache Kafka** topic named `traffic-events` to decouple production from consumption.
+
+![Figure 3.2: Kafka Console Consumer showing real-time JSON events](images/figure_3_2_kafka_consumer.png)
+*Figure 3.2: Kafka Console Consumer displaying real-time JSON events.*
 
 ### 2. Storage (Data Lake)
 * **Raw Zone:** A dedicated consumer (`hdfs_consumer.py`) reads from Kafka, buffers messages to avoid "Small Files" issues, and writes raw JSON data into **HDFS**.
 * **Partitioning Strategy:** Data is organized hierarchically to optimize retrieval: `/data/raw/traffic/YYYY-MM-DD/Zone/`.
+
+![Figure 4.1: HDFS Directory Structure](images/figure_4_1_hdfs_structure.png)
+*Figure 4.1: Recursive list of the /data directory in HDFS showing partitions.*
 
 ### 3. Processing & Analytics
 **Apache Spark** is used for batch processing and aggregation (`process_traffic.py`). The logic includes:
@@ -87,11 +97,17 @@ The solution is fully containerized using **Docker** and follows an enhanced **E
 * **Traffic by Zone:** Bar charts showing vehicle distribution.
 * **Congestion Alerts:** Real-time panels highlighting critical zones.
 
+![Figure 6.3: Final Grafana Dashboard](images/figure_6_3_grafana_dashboard.png)
+*Figure 6.3: Final Grafana dashboard showing Speed Analysis and Traffic by Zone.*
+
 ### 5. Orchestration
 **Apache Airflow** automates the workflow with a DAG (`smart_city_traffic_pipeline`) running every 5 minutes. The DAG tasks are:
 1.  `check_kafka_ingestion`: Verifies Kafka availability.
 2.  `run_spark_job`: Triggers the Spark processing container.
 3.  `validate_hdfs_output`: Confirms the successful creation of analytics data in HDFS.
+
+![Figure 7.2: Airflow Graph View](images/figure_7_2_airflow_graph.png)
+*Figure 7.2: Airflow Graph View illustrating the task flow: Check -> Spark -> Validate.*
 
 ---
 
@@ -118,25 +134,19 @@ The solution is fully containerized using **Docker** and follows an enhanced **E
     ```
 
 2.  **Start the Infrastructure**
-    The project uses a comprehensive `docker-compose.yml` file to spin up Zookeeper, Kafka, Hadoop, Spark, Postgres, Grafana, and Airflow.
     ```bash
     docker-compose up -d
     ```
 
 3.  **Start Data Generation**
     ```bash
-    # Create the virtual environment and install dependencies
     python -m venv venv
     source venv/bin/activate
     pip install -r requirements.txt
-
-    # Run the simulator
     python traffic_generator.py
     ```
 
 4.  **Access Interfaces**
-    * **Airflow:** `http://localhost:8080` (Trigger the DAG)
-    * **Grafana:** `http://localhost:3000` (View Dashboards)
-    * **HDFS:** `http://localhost:9870`
-
----
+    * **Airflow:** http://localhost:8080
+    * **Grafana:** http://localhost:3000
+    * **HDFS:** http://localhost:9870
