@@ -23,7 +23,7 @@
 
 This project implements a scalable **End-to-End Big Data Pipeline** designed to address urban mobility challenges within a **Smart City** context. By collecting, processing, and visualizing traffic data in real-time, the system provides actionable insights to detect congestion events and analyze vehicle flows across different urban zones.
 
-![](images/archetecture.png)
+![](images/architecture.png)
 
 
 ### Table of Contents
