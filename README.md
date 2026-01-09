@@ -69,19 +69,19 @@ The solution is fully containerized using **Docker** and follows an enhanced **E
 * **Simulation:** A Python script (`traffic_generator.py`) simulates realistic traffic patterns, including logic for "Rush Hours" (8 AM–10 AM, 5 PM–7 PM) where vehicle count and occupancy rates increase while speed decreases.
 * **Data Format:** JSON events containing `sensor_id`, `road_id`, `road_type`, `vehicle_count`, `average_speed`, `occupancy_rate`, and `event_time`.
 
-![Figure 2.1: Python traffic generator output sending data to Kafka](images/figure_2_1_traffic_generator.png)
+![Figure 2.1: Python traffic generator output sending data to Kafka](images/1.png)
 *Figure 2.1: Output of the Python traffic generator.*
 
 * **Ingestion:** Events are pushed to an **Apache Kafka** topic named `traffic-events` to decouple production from consumption.
 
-![Figure 3.2: Kafka Console Consumer showing real-time JSON events](images/figure_3_2_kafka_consumer.png)
+![Figure 3.2: Kafka Console Consumer showing real-time JSON events](images/2.png)
 *Figure 3.2: Kafka Console Consumer displaying real-time JSON events.*
 
 ### 2. Storage (Data Lake)
 * **Raw Zone:** A dedicated consumer (`hdfs_consumer.py`) reads from Kafka, buffers messages to avoid "Small Files" issues, and writes raw JSON data into **HDFS**.
 * **Partitioning Strategy:** Data is organized hierarchically to optimize retrieval: `/data/raw/traffic/YYYY-MM-DD/Zone/`.
 
-![Figure 4.1: HDFS Directory Structure](images/figure_4_1_hdfs_structure.png)
+![Figure 4.1: HDFS Directory Structure](images/3.png)
 *Figure 4.1: Recursive list of the /data directory in HDFS showing partitions.*
 
 ### 3. Processing & Analytics
@@ -97,7 +97,7 @@ The solution is fully containerized using **Docker** and follows an enhanced **E
 * **Traffic by Zone:** Bar charts showing vehicle distribution.
 * **Congestion Alerts:** Real-time panels highlighting critical zones.
 
-![Figure 6.3: Final Grafana Dashboard](images/figure_6_3_grafana_dashboard.png)
+![Figure 6.3: Final Grafana Dashboard](images/4.png)
 *Figure 6.3: Final Grafana dashboard showing Speed Analysis and Traffic by Zone.*
 
 ### 5. Orchestration
@@ -106,7 +106,7 @@ The solution is fully containerized using **Docker** and follows an enhanced **E
 2.  `run_spark_job`: Triggers the Spark processing container.
 3.  `validate_hdfs_output`: Confirms the successful creation of analytics data in HDFS.
 
-![Figure 7.2: Airflow Graph View](images/figure_7_2_airflow_graph.png)
+![Figure 7.2: Airflow Graph View](images/5.png)
 *Figure 7.2: Airflow Graph View illustrating the task flow: Check -> Spark -> Validate.*
 
 ---
